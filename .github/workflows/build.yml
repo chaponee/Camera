@@ -1,4 +1,4 @@
-name: Build iOS IPA
+name: Build iOS App
 
 on:
   push:
@@ -15,26 +15,29 @@ name: Checkout Code
     uses: actions/checkout@v4
 
     
-name: Select Xcode
-    run: sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+name: Resolve Swift Dependencies
+    run: swift package resolve
 
     
-name: Build App
+name: Build App for iOS
     run: |
-      xcodebuild -project Camera.xcodeproj \-scheme Camera \-sdk iphoneos \-configuration Release \-derivedDataPath build \
-                 CODE_SIGN_IDENTITY="" \
-                 CODE_SIGNING_REQUIRED=NO \
-                 CODE_SIGNING_ALLOWED=NO
+      swift build -c release --triple arm64-apple-ios15.0
 
     
-name: Package IPA
+name: Bundle IPA Package
     run: |
-      mkdir -p Payload
-      cp -r build/Build/Products/Release-iphoneos/Camera.app Payload/
-      zip -r Camera.ipa Payload
+      mkdir -p Payload/Camera.app
+      # Copy compiled binary
+      cp .build/arm64-apple-ios15.0/release/Camera Payload/Camera.app/ 2>/dev/null  cp .build/release/Camera Payload/Camera.app/ 2>/dev/null 
+ true
+      # Create minimal valid Info.plist required by Sideloadly
+      cat <<EOF > Payload/Camera.app/Info.plist<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd"><plist version="1.0"><dict><key>CFBundleExecutable</key><string>Camera</string><key>CFBundleIdentifier</key><string>com.chaponee.camera</string><key>CFBundleName</key><string>Camera</string><key>CFBundlePackageType</key><string>APPL</string><key>CFBundleShortVersionString</key><string>1.0</string><key>CFBundleVersion</key><string>1</string><key>MinimumOSVersion</key><string>15.0</string><key>NSCameraUsageDescription</key><string>Camera access is required to take photos.</string></dict></plist>
+      EOF
+
+        zip -r Camera.ipa Payload
 
     
-name: Upload IPA Artifact
+name: Upload IPA
     uses: actions/upload-artifact@v4
     with:
       name: Camera-IPA
