@@ -1,0 +1,19 @@
+workflows:
+  ios-swift-package:
+    name: Build Unsigned IPA
+    max_build_duration: 30
+    instance_type: mac_mini_m2
+    environment:
+      xcode: latest
+    scripts:
+      - name: Build Swift Package Executable
+        script: |
+          swift build -c release --triple arm64-apple-ios16.0-simulator
+      - name: Create Unsigned IPA Package
+        script: |
+          mkdir -p Payload
+          BUILD_PATH=$(swift build -c release --show-bin-path)
+          cp -r "$BUILD_PATH/Camera" Payload/
+          zip -r Camera.ipa Payload
+    artifacts:
+      - *.ipa
