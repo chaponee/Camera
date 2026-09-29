@@ -1,4 +1,4 @@
-name: Build iOS IPA
+name: Build iOS App
 
 on:
   push:
@@ -15,16 +15,13 @@ name: Checkout Code
     uses: actions/checkout@v4
 
     
-name: Set up Xcode Project and Build IPA
-    run: |# Create a lightweight Xcode project structure
+name: Create Xcode Project & App Shell
+    run: |# Create App directory structure
       mkdir -p CameraApp/CameraApp
-      # Copy Swift files
+      # Copy Swift files into app folder
       cp *.swift CameraApp/CameraApp/ 2>/dev/null || true
-      if [ -f ContentView.swift ]; then
-        cp ContentView.swift CameraApp/CameraApp/
-      fi
 
-        # Generate Info.plist
+        # Create Info.plist
         cat <<EOF > CameraApp/CameraApp/Info.plist
         <?xml version="1.0" encoding="UTF-8"?>
         <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -46,24 +43,20 @@ name: Set up Xcode Project and Build IPA
             <string>15.0</string>
             <key>NSCameraUsageDescription</key>
             <string>Camera access is required to take photos.</string>
-            <key>UILaunchStoryboardName</key>
-            <string>LaunchScreen</string>
         </dict>
         </plist>
         EOF
 
-        # Compile dummy app binary structure using swiftc
+        # Package raw app layout
         mkdir -p Payload/Camera.app
         cp CameraApp/CameraApp/Info.plist Payload/Camera.app/
 
-Build binary target
-        swiftc -sdk $(xcrun --sdk iphoneos --show-sdk-path) \
-               -target arm64-apple-ios15.0 \
--emit-executable \
-               *.swift \
-               -o Payload/Camera.app/CameraApp || true
+Compile Swift source into executable binary
+        xcrun -sdk iphoneos swiftc -target arm64-apple-ios15.0 \
+          -import-objc-header /dev/null \
+          *.swift -o Payload/Camera.app/CameraApp || true
 
-        # Zip into valid IPA package
+        # Create final package
         zip -r Camera.ipa Payload
 
     
